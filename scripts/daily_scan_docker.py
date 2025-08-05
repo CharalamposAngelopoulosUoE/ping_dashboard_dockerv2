@@ -2,27 +2,45 @@ import subprocess
 import platform
 import json
 import os
+import pandas as pd
 
-# Path to IP list file
-IP_FILE = os.path.join("data", "IP_list")
+# Path to Excel IP list file
+IP_FILE = os.path.join("data", "IP_List.xlsx")
 
 def load_ips():
-    ips = []
     if not os.path.exists(IP_FILE):
-        print(f"IP list file not found: {IP_FILE}")
-        return ips
+        raise FileNotFoundError(f"IP list file not found: {IP_FILE}")
 
-    with open(IP_FILE, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue  # skip empty lines or comments
-            try:
-                name, ip = line.split(",")
-                ips.append({"name": name.strip(), "ip": ip.strip()})
-            except ValueError:
-                print(f"Invalid line in IP list: {line}")
-    return ips
+    try:
+        df = pd.read_excel(IP_FILE)
+        # Normalize column names
+        df.columns = [c.strip().lower() for c in df.columns]
+
+        # Detect name and IP columns
+        name_col = None
+        ip_col = None
+        for col in df.columns:
+            if "name" in col:
+                name_col = col
+            if "ip" in col:
+                ip_col = col
+
+        if not name_col or not ip_col:
+            raise ValueError(f"Expected columns containing 'Name' and 'IP' in {IP_FILE}")
+
+        ips = []
+        for _, row in df.iterrows():
+            name = str(row[name_col]).strip()
+            ip = str(row[ip_col]).strip()
+            if name and ip:
+                ips.append({"name": name, "ip": ip})
+
+        if not ips:
+            raise ValueError(f"No valid IPs found in {IP_FILE}")
+
+        return ips
+    except Exception as e:
+        raise ValueError(f"Error reading IP list from {IP_FILE}: {e}")
 
 def ping(host):
     param = "-n" if platform.system().lower() == "windows" else "-c"
@@ -39,7 +57,7 @@ def run_scan():
             "ip": item["ip"],
             "status": status
         })
-    # Save to temporary json (used by monitor.py)
+
     with open("/tmp/scan_results.json", "w") as f:
         json.dump(results, f)
 

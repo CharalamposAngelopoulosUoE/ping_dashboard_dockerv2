@@ -13,7 +13,7 @@ def dashboard():
             results = json.load(f)
     else:
         results = []
-    # Render simple HTML
+
     html = "<h1>Ping Dashboard (Docker)</h1><table border='1'><tr><th>Name</th><th>IP</th><th>Status</th></tr>"
     for r in results:
         color = "green" if r['status']=="online" else "red"
@@ -22,4 +22,4 @@ def dashboard():
     return render_template_string(html)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=True)

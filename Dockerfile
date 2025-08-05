@@ -7,7 +7,12 @@ RUN apt-get update && apt-get install -y iputils-ping && rm -rf /var/lib/apt/lis
 
 COPY . .
 
-RUN pip install flask
+# Install Python dependencies
+RUN pip install flask pandas openpyxl
+
+# Enable Flask debug mode
+ENV FLASK_ENV=development
+ENV FLASK_DEBUG=1
 
 EXPOSE 5000
 
